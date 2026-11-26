@@ -14,7 +14,7 @@ terraform {
 
   backend "s3" {
     bucket       = "roma-tfstate-softserve-task1"
-    key          = "task2/terraform.tfstate"
+    key          = "task3/terraform.tfstate"
     region       = "eu-north-1"
     use_lockfile = true
   }
@@ -25,7 +25,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Environment = "Task2"
+      Environment = "Task3"
       ManagedBy   = "Terraform"
       Project     = "OCG1-Onboarding"
     }
