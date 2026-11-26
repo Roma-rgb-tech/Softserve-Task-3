@@ -22,7 +22,10 @@ data "aws_iam_policy_document" "github_oidc_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:Roma-rgb-tech@212218013/Softserve-Task-2@1448287034:*"]
+      values = [
+        "repo:Roma-rgb-tech@212218013/Softserve-Task-2@1448287034:*",
+        "repo:Roma-rgb-tech@212218013/Softserve-Task-3@1472031186:*",
+      ]
     }
   }
 }
