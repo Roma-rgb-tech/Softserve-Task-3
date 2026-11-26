@@ -17,7 +17,7 @@ terraform {
 
   backend "s3" {
     bucket       = "roma-tfstate-softserve-task1"
-    key          = "task2/grafana/terraform.tfstate"
+    key          = "task3/grafana/terraform.tfstate"
     region       = "eu-north-1"
     use_lockfile = true
   }
@@ -31,7 +31,7 @@ data "terraform_remote_state" "infra" {
   backend = "s3"
   config = {
     bucket = "roma-tfstate-softserve-task1"
-    key    = "task2/terraform.tfstate"
+    key    = "task3/terraform.tfstate"
     region = "eu-north-1"
   }
 }

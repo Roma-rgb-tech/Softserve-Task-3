@@ -64,13 +64,13 @@ variable "ssh_public_key" {
 variable "bastion_instance_type" {
   description = "Instance type for the bastion host"
   type        = string
-  default     = "t3.micro"
+  default     = "t3.nano"
 }
 
 variable "app_instance_type" {
   description = "Instance type for LLM instances in the ASG"
   type        = string
-  default     = "m7i.large"
+  default     = "c7i.large"
 }
 
 variable "db_instance_type" {
@@ -106,7 +106,7 @@ variable "slack_webhook_url" {
 variable "open_webui_instance_type" {
   description = "Instance type for Open WebUI host"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "domain_name" {
@@ -127,7 +127,7 @@ variable "route53_delegation_set_id" {
 variable "keycloak_instance_type" {
   description = "EC2 instance type for Keycloak"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "vpn_cidrs" {
