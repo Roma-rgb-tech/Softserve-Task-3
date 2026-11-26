@@ -146,6 +146,8 @@ resource "aws_autoscaling_group" "this" {
   target_group_arns         = [aws_lb_target_group.this.arn]
   enabled_metrics           = ["GroupInServiceInstances"]
   metrics_granularity       = "1Minute"
+  force_delete              = true
+  force_delete_warm_pool    = true
 
   launch_template {
     id      = aws_launch_template.this.id
