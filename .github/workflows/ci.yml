@@ -7,7 +7,7 @@ on:
       - "**.tfvars"
       - "packer/**"
       - ".github/workflows/**"
-      
+
 permissions:
   id-token: write
   contents: read

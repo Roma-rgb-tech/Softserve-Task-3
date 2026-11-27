@@ -1,0 +1,113 @@
+name: "Container Images"
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*.*.*"
+    paths:
+      - "docker/**"
+      - ".github/workflows/images.yml"
+
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-north-1
+
+jobs:
+  lint:
+    name: "Hadolint"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.5.0
+        with:
+          dockerfile: Dockerfile
+          recursive: true
+          failure-threshold: error
+
+  build:
+    name: "Build & push (${{ matrix.image }})"
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ollama, open-webui, prometheus, grafana]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve image tag
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: llm/${{ matrix.image }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="sha-${GITHUB_SHA::7}"
+          fi
+          echo "ref=$REGISTRY/$REPOSITORY:$tag" >> "$GITHUB_OUTPUT"
+          if aws ecr describe-images --repository-name "$REPOSITORY" --image-ids imageTag="$tag" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Free disk space for the model layer
+        if: matrix.image == 'ollama' && steps.image.outputs.exists != 'true'
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+
+      - name: Build image
+        if: steps.image.outputs.exists != 'true'
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: docker build --platform linux/amd64 --tag "$IMAGE_REF" "docker/${{ matrix.image }}"
+
+      - name: Scan image with Trivy
+        if: steps.image.outputs.exists != 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.image.outputs.ref }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-${{ matrix.image }}.sarif
+
+      - name: Upload scan results
+        if: steps.image.outputs.exists != 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-${{ matrix.image }}.sarif
+          category: image-${{ matrix.image }}
+
+      - name: Push image
+        if: steps.image.outputs.exists != 'true'
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: docker push "$IMAGE_REF"
