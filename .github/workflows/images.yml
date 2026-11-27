@@ -86,7 +86,7 @@ jobs:
         if: steps.image.outputs.exists != 'true'
         env:
           IMAGE_REF: ${{ steps.image.outputs.ref }}
-        run: docker build --platform linux/amd64 --tag "$IMAGE_REF" "docker/${{ matrix.image }}"
+        run: docker build --platform linux/amd64 --provenance=false --tag "$IMAGE_REF" "docker/${{ matrix.image }}"
 
       - name: Scan image with Trivy
         if: steps.image.outputs.exists != 'true'
